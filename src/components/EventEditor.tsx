@@ -96,6 +96,50 @@ const EventEditor: React.FC<EventEditorProps> = ({ selectedEvents, setEvents, ac
     }
   };
 
+  const deleteEvents = async () => {
+    if (!selectedCalendar) {
+      console.error('No calendar selected');
+      return;
+    }
+
+    try {
+      await Promise.all(selectedEvents.map(async (event) => {
+        const response = await axios.delete(
+          `https://www.googleapis.com/calendar/v3/calendars/${selectedCalendar}/events/${event.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (response.status !== 204) {
+          console.error('Error deleting event:', response.data);
+        } else {
+          console.log('Event deleted:', event.id);
+        }
+      }));
+
+      // Fetch the updated list of events
+      const response = await axios.get(
+        `https://www.googleapis.com/calendar/v3/calendars/${selectedCalendar}/events`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            timeMin: new Date().toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+          },
+        }
+      );
+      setEvents(response.data.items);
+    } catch (error) {
+      console.error('Error deleting events:', error);
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Editar eventos seleccionados</h2>
@@ -168,13 +212,22 @@ const EventEditor: React.FC<EventEditorProps> = ({ selectedEvents, setEvents, ac
           />
         </div>
       )}
-      <button
-        onClick={updateEvents}
-        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        disabled={selectedEvents.length === 0}
-      >
-        Actualizar eventos seleccionados
-      </button>
+      <div className="flex space-x-4">
+        <button
+          onClick={updateEvents}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          disabled={selectedEvents.length === 0}
+        >
+          Actualizar eventos seleccionados
+        </button>
+        <button
+          onClick={deleteEvents}
+          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+          disabled={selectedEvents.length === 0}
+        >
+          Eliminar eventos seleccionados
+        </button>
+      </div>
     </div>
   );
 };
