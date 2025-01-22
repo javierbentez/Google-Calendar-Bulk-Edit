@@ -5,7 +5,7 @@ import EventList from './components/EventList';
 import EventEditor from './components/EventEditor';
 import axios from 'axios';
 
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
 interface Event {
   id: string;
@@ -20,6 +20,8 @@ interface Calendar {
   summary: string;
 }
 
+const allowedEmails = ['javierbentezgarca@gmail.com'];
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
@@ -31,14 +33,28 @@ function App() {
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       console.log(tokenResponse);
-      setIsLoggedIn(true);
-      setAccessToken(tokenResponse.access_token);
-      await fetchCalendars(tokenResponse.access_token);
+      const userInfoResponse = await axios.get(
+        'https://www.googleapis.com/oauth2/v1/userinfo?alt=json',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        }
+      );
+      const email = userInfoResponse.data.email;
+
+      if (allowedEmails.includes(email)) {
+        setIsLoggedIn(true);
+        setAccessToken(tokenResponse.access_token);
+        await fetchCalendars(tokenResponse.access_token);
+      } else {
+        alert('Access denied: Your email is not allowed to use this application.');
+      }
     },
     onError: () => {
       console.log('Login Failed');
     },
-    scope: 'https://www.googleapis.com/auth/calendar',
+    scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email',
   });
 
   const fetchCalendars = async (token: string) => {
@@ -128,7 +144,6 @@ function App() {
                 />
               </>
             )}
-
           </div>
         )}
       </div>
