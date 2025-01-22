@@ -7,6 +7,9 @@ import axios from 'axios';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 
+// Carga la lista de correos electrónicos permitidos desde el archivo .env
+const allowedEmails = (import.meta.env.VITE_ALLOWED_EMAILS || '').split(',');
+
 interface Event {
   id: string;
   summary: string;
@@ -19,8 +22,6 @@ interface Calendar {
   id: string;
   summary: string;
 }
-
-const allowedEmails = ['javierbentezgarca@gmail.com'];
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
